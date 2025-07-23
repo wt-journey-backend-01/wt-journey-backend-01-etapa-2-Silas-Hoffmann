@@ -26,7 +26,7 @@ app.listen(PORT, () => {
 -----------------Rotas raiz-------------------
 --------------------------------------------*/
 app.get('/', (req, res) => {
-    res.status(200).send('Servidor do Departamento de Polícia rodando em localhost:3000');
+    res.status(200).send('Bem vindo ao Departamento de Policia!');
 });
 
 /*--------------------------------------------
@@ -124,11 +124,62 @@ app.delete('/agentes/:id', (req, res) => {
 });
 
 app.get('/agentes', (req, res) => {
-    res.status(200);
+    const agentes = agentesRepository.findAll();
+
+    let html = `
+        <html>
+        <head>
+            <title>Lista de Agentes</title>
+        </head>
+        <body>
+            <h1>Agentes Registrados</h1>
+            <div style="border: 1px solid black; border-radius: 5px; padding: 10px">
+    `;
+    agentes.forEach(agente => {
+        html += `
+            <div style="border: 1px solid black; border-radius: 5px; padding: 10px">
+                <h2><strong>${agente.nome}</strong></h2>
+                <p><strong>${agente.cargo}</strong></p>
+                <p>${agente.dataDeIncorporacao}</p>
+            </div>
+            <br>
+        `;
+    });
+    html += `
+            </div>
+        </body>
+        </html>
+    `;
+    res.status(200).send(html);
 });
 
 app.get('/agentes/:id', (req, res) => {
-    res.status(200);
+    const id = req.params.id;
+    const agente = agentesRepository.findById(id);
+
+    let html;
+
+    if (!agente) {
+        return res.status(404).send("<p>Agente não encontrado<p>");
+    } else {
+        html = `
+        <html>
+        <head>
+            <title>Lista de Agentes</title>
+        </head>
+        <body>
+            <h1>Agentes Encontrados</h1>
+            <div style="border: 1px solid black; border-radius: 5px; padding: 10px">
+                <h2><strong>${agente.nome}</strong></h2>
+                <p><strong>${agente.cargo}</strong></p>
+                <p>${agente.dataDeIncorporacao}</p>
+            </div>
+        </body>
+        </html>
+        `
+    }
+
+    res.status(200).send(html);
 });
 
 app.put('/agentes/:id', (req, res) => {
