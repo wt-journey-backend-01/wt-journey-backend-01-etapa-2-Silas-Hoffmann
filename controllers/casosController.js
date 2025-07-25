@@ -6,11 +6,11 @@ function isUUID(str) { // valida o formato do id para UUID
     const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return regex.test(str);
 }
-function getAllcasos(req, res) {
+function getAllCasos(req, res) {
     const casos = casosRepository.findAll();
     res.status(200).send(casos);
 }
-function getCasosById(req, res) {
+function getCasoById(req, res) {
     const id = req.params.id;
     const caso = casosRepository.findById(id);
     if (!caso) {
@@ -42,11 +42,11 @@ function create(req, res) {
     }
 
     let newId = uuidv4();
-    while (!isUUID(newId) || agentesRepository.findById(newId)) {
+    while (!isUUID(newId) || casosRepository.findById(newId)) {
         newId = uuidv4()
     }
 
-    const newCaso = { newId, titulo, descricao, status, agente_id: agente.id };
+    const newCaso = { id: newId, titulo, descricao, status, agente_id: agente.id };
     casosRepository.add(newCaso);
     res.status(201).json(newCaso);
 }
@@ -136,8 +136,8 @@ function deleteCaso(req, res) {
 }
 
 module.exports = {
-    getAllcasos,
-    getCasosById,
+    getAllCasos,
+    getCasoById,
     create,
     update,
     deleteCaso,

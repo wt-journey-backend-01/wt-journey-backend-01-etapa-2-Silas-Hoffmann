@@ -22,11 +22,11 @@ function validacaoData(dataStr) { // 1 = valida | 0 = fora do formato | -1 = dat
 
     return 1; // Data válida e não está no futuro
 }
-function getAllagentes(req, res) {
+function getAllAgentes(req, res) {
     const agentes = agentesRepository.findAll();
     res.status(200).send(agentes);
 }
-function getAgentesById(req, res) {
+function getAgenteById(req, res) {
     const id = req.params.id;
     const agente = agentesRepository.findById(id);
     if (!agente) {
@@ -57,7 +57,7 @@ function create(req, res) {
         newId = uuidv4()
     }
 
-    const newAgente = { newId, nome, dataDeIncorporacao, cargo };
+    const newAgente = { id: newId, nome, dataDeIncorporacao, cargo };
     agentesRepository.add(newAgente);
     res.status(201).json(newAgente);
 }
@@ -139,8 +139,8 @@ function updateParcial(req, res) {
 }
 
 module.exports = {
-    getAllagentes,
-    getAgentesById,
+    getAllAgentes,
+    getAgenteById,
     create,
     update,
     deleteAgente,

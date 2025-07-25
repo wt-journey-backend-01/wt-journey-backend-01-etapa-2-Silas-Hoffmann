@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const casosController = require('../controllers/casosController');
 
-router.get('/', casosController.getAllcasos);
-router.get('/:id', casosController.getCasosById);
+router.get('/', casosController.getAllCasos);
+router.get('/:id', casosController.getCasoById);
 router.post('/', casosController.create);
 router.put('/:id', casosController.update);
 router.patch('/:id', casosController.updateParcial);
