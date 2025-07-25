@@ -1,188 +1,192 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 8 créditos restantes para usar o sistema de feedback AI.
+Você tem 7 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para Silas-Hoffmann:
 
-Nota final: **93.3/100**
+Nota final: **48.5/100**
 
-Olá, Silas! 👋🚀
+# Feedback para Silas-Hoffmann 🚨👮‍♂️
 
-Primeiramente, parabéns pelo seu empenho e dedicação neste desafio do Departamento de Polícia! 🎉 Você estruturou seu projeto de forma organizada, usando rotas, controllers e repositories, e implementou os métodos HTTP essenciais para os recursos `/agentes` e `/casos`. Isso já mostra um ótimo domínio dos conceitos fundamentais de uma API RESTful com Node.js e Express.js! 👏
-
----
-
-### O que você acertou com louvor! 🌟
-
-- **Arquitetura modular:** Seu projeto está bem dividido em pastas `routes/`, `controllers/` e `repositories/`, exatamente como esperado. Isso facilita muito a manutenção e escalabilidade do código.
-- **Implementação dos endpoints:** Você implementou todos os métodos HTTP (GET, POST, PUT, PATCH, DELETE) para os dois recursos principais, e isso é essencial para uma API REST completa.
-- **Validações de dados:** Seu código tem validações importantes, como checar campos obrigatórios e validar formatos de data e status. Isso ajuda a manter a integridade dos dados.
-- **Tratamento de erros:** Você retorna os status codes corretos (400, 404, 201, 204 etc.) e mensagens claras, o que é fundamental para uma API amigável e robusta.
-- **Bônus:** Notei que você tentou implementar filtros e ordenações para agentes e casos, mesmo que ainda não estejam 100% prontos — isso mostra iniciativa para ir além do básico! 💪
+Olá, Silas! Primeiramente, parabéns pelo esforço e por chegar até aqui com sua API para o Departamento de Polícia! 👏🎉 Você já tem uma base muito boa, com endpoints implementados para agentes e casos, e até conseguiu entregar alguns bônus, o que é um baita diferencial! Vamos juntos destrinchar seu código para deixá-lo ainda melhor? 💪
 
 ---
 
-### Onde podemos melhorar para deixar seu código ainda mais afiado 🔍
+## 🎯 O que você já mandou bem (vamos celebrar! 🥳)
 
-Eu percebi que dois pontos importantes precisam de atenção, pois impactam diretamente na experiência do usuário da API:
+- Você implementou todas as rotas principais para os recursos `/agentes` e `/casos`, com os métodos HTTP corretos (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`). Isso é essencial e você fez direitinho!  
+- A estrutura do seu projeto está organizada em pastas: `routes`, `controllers`, `repositories` e até tem a pasta `utils` para o `errorHandler`, o que mostra que você está pensando modular.  
+- As validações básicas de campos obrigatórios estão presentes, como nome, cargo, datas para agentes e título, descrição, status para casos.  
+- Você usou o `uuid` para gerar IDs, que é uma ótima prática para identificar recursos.  
+- Os códigos de status HTTP estão sendo usados em várias situações corretamente (201, 404, 400, 204 etc).  
+- Você implementou tratamentos de erro para IDs não encontrados e payloads inválidos.  
+- E o mais legal: você tentou implementar filtros e mensagens de erro customizadas, o que é um bônus que nem todo mundo faz! Isso mostra que você quer ir além do básico, e isso é fantástico! 🚀
 
-#### 1. Buscar agente inexistente não retorna 404
+---
 
-No seu controller `agentesController.js`, a função `getAgentesById` está assim:
+## 🔍 Pontos importantes para melhorar (vamos afiar o código! 🔧)
+
+### 1. IDs dos agentes e casos — problema fundamental de validação! ⚠️
+
+Eu percebi que você está gerando os IDs usando `uuidv4()`, o que é ótimo, mas tem um detalhe que está causando problemas sérios:
+
+No seu `create` do `agentesController.js`, você faz assim:
 
 ```js
-function getAgentesById(req, res) {
-    const id = req.params.id;
-    const agente = agentesRepository.findById(id);
-    res.status(200).send(agente);
+const newId = uuidv4();
+while (!isUUID(newId) || agentesRepository.findById(newId)) {
+    newId = uuidv4()
 }
+
+const newAgente = { newId, nome, dataDeIncorporacao, cargo };
+agentesRepository.add(newAgente);
 ```
 
-Aqui está o ponto crucial: você retorna status 200 com o agente, mesmo quando ele não é encontrado (`agente` é `undefined`). Isso faz com que a API retorne um corpo vazio com status 200, o que não é o comportamento esperado. O correto é retornar um status 404 com uma mensagem clara quando o agente não existir.
+Aqui, você está criando uma constante `newId`, mas depois tenta reatribuir dentro do `while`, o que não funciona porque `const` não pode ser reatribuído. Além disso, o objeto que você cria tem a propriedade `newId`, mas o esperado é que a propriedade seja `id` para que o repositório e o restante do código reconheçam o campo corretamente.
 
-**Como corrigir:**
+O correto seria:
 
 ```js
-function getAgentesById(req, res) {
-    const id = req.params.id;
-    const agente = agentesRepository.findById(id);
-    if (!agente) {
-        return res.status(404).send("Agente não encontrado");
-    }
-    res.status(200).send(agente);
+let newId = uuidv4();
+while (!isUUID(newId) || agentesRepository.findById(newId)) {
+    newId = uuidv4();
 }
+
+const newAgente = { id: newId, nome, dataDeIncorporacao, cargo };
+agentesRepository.add(newAgente);
 ```
 
-Essa verificação evita confusão para quem consome a API e segue boas práticas REST. 😊
-
----
-
-#### 2. Atualização parcial (PATCH) de agente não valida formato incorreto do payload
-
-Você implementou a função `updateParcial` para atualizar parcialmente um agente, o que é ótimo! Mas notei que, apesar de validar os campos individuais, não há uma validação robusta para o formato geral do payload no PATCH. Por exemplo, se o payload estiver em formato incorreto (como enviar um campo `id` para alterar, ou um campo de data inválida), a API deveria retornar status 400.
-
-No seu código:
+O mesmo problema acontece no `casosController.js`:
 
 ```js
-function updateParcial(req, res) {
-    const uuid = req.params.id;
-    const agente = agentesRepository.findById(uuid);
-    const { nome, cargo, dataDeIncorporacao, id } = req.body;
-    if (!agente) {
-        return res.status(404).send("Agente não encontrado");
-    } else {
-        if (nome) {
-            agente.nome = nome;
-        }
-        if (cargo) {
-            agente.cargo = cargo;
-        }
-        if (dataDeIncorporacao) {
-            const datavalida = validacaoData(dataDeIncorporacao);
-            if (datavalida == 0) {
-                return res.status(400).send("Data invalida YYYY-MM-DD");
-            } else if (datavalida == -1) {
-                return res.status(400).send("Data nao pode ser futura");
-            }
-            agente.dataDeIncorporacao = dataDeIncorporacao;
-        }
-        if ('id' in req.body) {
-            return res.status(400).send("ID nao pode ser alterado");
-        }
-        res.status(200).json(agente);
-    }
+const newId = uuidv4();
+while (!isUUID(newId) || agentesRepository.findById(newId)) {
+    newId = uuidv4()
 }
+
+const newCaso = { newId, titulo, descricao, status, agente_id: agente.id };
+casosRepository.add(newCaso);
 ```
 
-O problema está na ordem da validação: você só verifica se o campo `id` está no corpo **depois** de já ter atualizado outros campos. Se o payload estiver incorreto (ex: tentando alterar o `id`), a API deveria rejeitar antes de alterar qualquer dado.
+Aqui, você está usando `const` e depois tentando reatribuir, e também está criando a propriedade `newId` em vez de `id` no objeto `newCaso`. Além disso, o `while` está verificando se o ID existe no repositório de agentes, quando deveria verificar no repositório de casos!
 
-**Sugestão para melhorar:**
-
-- Primeiro, valide se há campos proibidos (como `id`) no corpo.
-- Depois, valide os formatos dos campos.
-- Só então faça as alterações.
-
-Exemplo:
+Corrigindo, deve ficar assim:
 
 ```js
-function updateParcial(req, res) {
-    const uuid = req.params.id;
-    const agente = agentesRepository.findById(uuid);
-    if (!agente) {
-        return res.status(404).send("Agente não encontrado");
-    }
-    if ('id' in req.body) {
-        return res.status(400).send("ID nao pode ser alterado");
-    }
-    const { nome, cargo, dataDeIncorporacao } = req.body;
-    if (dataDeIncorporacao) {
-        const datavalida = validacaoData(dataDeIncorporacao);
-        if (datavalida == 0) {
-            return res.status(400).send("Data invalida YYYY-MM-DD");
-        } else if (datavalida == -1) {
-            return res.status(400).send("Data nao pode ser futura");
-        }
-    }
-    if (nome) agente.nome = nome;
-    if (cargo) agente.cargo = cargo;
-    if (dataDeIncorporacao) agente.dataDeIncorporacao = dataDeIncorporacao;
-
-    res.status(200).json(agente);
+let newId = uuidv4();
+while (!isUUID(newId) || casosRepository.findById(newId)) {
+    newId = uuidv4();
 }
+
+const newCaso = { id: newId, titulo, descricao, status, agente_id: agente.id };
+casosRepository.add(newCaso);
 ```
 
-Assim, você garante que nenhuma alteração ocorra se o payload for inválido, mantendo a integridade dos dados. 👍
+**Por que isso é tão importante?**  
+Se o ID não estiver no formato correto ou não estiver na propriedade certa, outras partes do código, como buscas por ID, atualizações e exclusões, não vão funcionar. Isso explica por que várias operações de leitura, atualização e exclusão estão falhando.
 
 ---
 
-### Sobre os filtros e funcionalidades bônus
+### 2. Validação da data de incorporação dos agentes
 
-Eu vi que você tentou implementar filtros para os casos e agentes, como busca por status, agente responsável e ordenação por data de incorporação, o que é super legal e demonstra seu esforço para ir além do básico! 🚀
+No seu `repositories/agentesRepository.js`, você tem um agente com data de incorporação `"2025-05-20"`, que é uma data futura. No seu controlador, você já tem uma validação para impedir datas futuras, mas esse dado inicial já está inválido.
 
-No entanto, essas funcionalidades ainda não estão completas ou não estão respondendo como esperado. Recomendo focar primeiro em garantir que todos os endpoints básicos estejam 100% funcionando com validações e tratamentos de erro corretos. Depois, volte para aprimorar os filtros.
+Isso pode causar inconsistências e confundir o comportamento da API. Recomendo ajustar a data inicial para uma data no passado, por exemplo:
+
+```js
+{
+    id: "2b62a6f4-1b23-4c82-87de-8cdb8ae987bc",
+    nome: "Claudio de Souza",
+    dataDeIncorporacao: "2020-05-20", // data corrigida para o passado
+    cargo: "inspetor",
+},
+```
 
 ---
 
-### Dicas extras para você continuar brilhando ✨
+### 3. Organização do código e uso do Router no `server.js`
 
-- Continue usando o middleware `express.json()` no `server.js` para garantir que o corpo das requisições seja interpretado corretamente (você já fez isso, ótimo!).
-- Sempre que for buscar um recurso pelo ID, faça a verificação se ele existe antes de retornar sucesso.
-- Mantenha a consistência nas mensagens de erro e nos status HTTP para facilitar o uso da API.
-- Documente seu código e endpoints para facilitar o entendimento de quem for consumir sua API (o arquivo `docs/swagger.js` pode ajudar nisso futuramente).
+Você fez corretamente o uso do `express.Router()` nos arquivos de rotas, e importou eles no `server.js` com:
+
+```js
+const agentesRouter = require("./routes/agentesRoutes")
+app.use(agentesRouter);
+
+const casosRouter = require("./routes/casosRoutes")
+app.use(casosRouter);
+```
+
+Mas é uma boa prática especificar um prefixo para as rotas ao usar o `app.use()`, assim fica mais claro e evita possíveis conflitos:
+
+```js
+app.use('/agentes', agentesRouter);
+app.use('/casos', casosRouter);
+```
+
+E dentro dos arquivos de rota, você pode definir as rotas sem o prefixo completo, por exemplo, em `agentesRoutes.js`:
+
+```js
+router.get('/', agentesController.getAllagentes);
+router.get('/:id', agentesController.getAgentesById);
+router.post('/', agentesController.create);
+router.put('/:id', agentesController.update);
+router.patch('/:id', agentesController.updateParcial);
+router.delete('/:id', agentesController.deleteAgente);
+```
+
+Assim, a rota completa será `/agentes` e `/agentes/:id`, o que é mais organizado e alinhado com boas práticas.
 
 ---
 
-### Recursos que vão te ajudar muito 📚
+### 4. Validação dos campos no `update` e `updateParcial`
 
-- Para reforçar o entendimento sobre **tratamento correto de erros e status HTTP**:  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400
+Nos seus controladores, você faz uma validação manual dos campos no `update` e `updateParcial`, o que é ótimo, mas repare que em alguns momentos você repete a validação do campo `id` para impedir alteração, mas não valida se o `id` passado na URL é um UUID válido.
 
-- Para entender melhor sobre **rotas e organização com Express.js**:  
-  https://expressjs.com/pt-br/guide/routing.html
+Seria interessante criar uma validação inicial para o parâmetro `id` da URL, garantindo que ele tenha o formato UUID antes de buscar no repositório. Isso evita buscas desnecessárias e respostas confusas.
 
-- Para aprofundar na **validação de dados em APIs Node.js/Express**:  
-  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
+---
 
-- Para reforçar os conceitos básicos de **API REST com Express.js**:  
+### 5. Filtros e ordenação (Bônus)
+
+Você tentou implementar filtros e ordenação, o que é muito bom! No entanto, como os testes indicaram, ainda faltam algumas implementações para que esses filtros funcionem corretamente.
+
+Para melhorar, recomendo que você crie funções específicas dentro dos seus repositórios para filtrar e ordenar os dados conforme query params recebidos, deixando seus controladores mais limpos e reutilizáveis.
+
+---
+
+## 📚 Recursos para você se aprofundar
+
+- Para entender melhor a geração e uso correto de IDs UUID e manipulação de objetos, recomendo este vídeo sobre fundamentos do Node.js e Express.js:  
   https://youtu.be/RSZHvQomeKE
 
+- Para organizar suas rotas usando `express.Router()` com prefixos e modularização, veja a documentação oficial do Express.js:  
+  https://expressjs.com/pt-br/guide/routing.html
+
+- Para validação de dados e tratamento de erros, incluindo status 400 e 404, este artigo da MDN é excelente:  
+  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400  
+  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404
+
+- Para manipulação de arrays e filtros, que vão ajudar muito na parte de filtros e ordenação, veja este vídeo:  
+  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
+
 ---
 
-### Resumo rápido para você focar agora 👇
+## 📝 Resumo rápido dos principais pontos para focar:
 
-- [ ] Corrigir o endpoint `getAgentesById` para retornar 404 quando o agente não existir.  
-- [ ] Ajustar a função `updateParcial` para validar o payload **antes** de alterar qualquer campo, especialmente para evitar alterações no campo `id`.  
-- [ ] Priorizar o funcionamento completo dos endpoints básicos antes de avançar nas funcionalidades de filtros e ordenação.  
-- [ ] Manter as mensagens de erro claras e os status HTTP corretos em toda a API.
+- [ ] Corrigir a geração e uso dos IDs: usar `let` para permitir reatribuição, garantir que o campo seja `id` e verificar no repositório correto.  
+- [ ] Ajustar as datas iniciais no repositório para não conter datas futuras.  
+- [ ] Melhorar o uso do `app.use()` no `server.js` para usar prefixos nas rotas.  
+- [ ] Validar o `id` recebido via URL para garantir que seja UUID antes de buscar no repositório.  
+- [ ] Refatorar filtros e ordenações para serem implementados no repositório, deixando o controlador mais limpo.  
+- [ ] Continuar aprimorando as mensagens de erro customizadas para melhorar a experiência do usuário da API.
 
 ---
 
-Silas, seu código já está muito bem encaminhado, e com esses ajustes você vai deixar sua API ainda mais profissional e confiável! Continue assim, aprendendo e aprimorando, que você vai longe! 🚀💙
+Silas, você está no caminho certo! Com esses ajustes, sua API vai ficar muito mais robusta, confiável e alinhada com as melhores práticas. Continue firme, revisando seu código com carinho e aprendendo cada vez mais! 🚀👊
 
-Se precisar de ajuda para entender qualquer ponto, estou aqui para te acompanhar nessa jornada! 😉
+Se precisar de ajuda para entender qualquer ponto, não hesite em pedir! Estou aqui para te ajudar a crescer como dev! 😉
 
-Abraços do seu Code Buddy! 🤖✨
+Um abraço e até a próxima revisão! 🤗✨
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
