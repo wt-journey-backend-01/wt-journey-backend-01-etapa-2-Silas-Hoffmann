@@ -120,6 +120,37 @@ function update(req, res) {
         res.status(200).json(caso);
     }
 }
+function updateParcial(req, res) {
+    const id = req.params.id;
+    const caso = casosRepository.findById(id);
+    const { titulo, descricao, status, agente_nome } = req.body;
+    if (!caso) {
+        return res.status(404).send("<p>Caso não encontrado</p>");
+    } else {
+        if (titulo) {
+            caso.titulo = titulo;
+        }
+        if (descricao) {
+            caso.descricao = descricao;
+        }
+        if (status) {
+            if (status != 'aberto' && status != 'solucionado') {
+                return res.status(400).send("<p>Status deve ser 'aberto' ou 'solucionado'</p>");
+            }
+            caso.status = status;
+        }
+
+        if (agente_nome) {
+            const agente = agentesRepository.findByNome(agente_nome);
+            if (!agente) {
+                return res.status(404).send("<p>Agente nao encontrado</p>");
+            } else {
+                caso.agente_id = agente.id;
+            }
+        }
+        res.status(200).json(caso);
+    }
+}
 function deleteCaso(req, res) {
     const id = req.params.id;
     const sucesso = casosRepository.removeById(id);
@@ -134,5 +165,6 @@ module.exports = {
     getCasosById,
     create,
     update,
-    deleteCaso
+    deleteCaso,
+    updateParcial
 }

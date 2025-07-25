@@ -102,11 +102,31 @@ function deleteAgente(req, res){
     }
     res.status(204).send();
 }
+function updateParcial(req, res) {
+    const id = req.params.id;
+    const agente = agentesRepository.findById(id);
+    const { nome, cargo, dataDeIncorporacao } = req.body;
+    if (!agente) {
+        return res.dataDeIncorporacao(404).send("<p>Agente não encontrado</p>");
+    } else {
+        if (nome) {
+            agente.nome = nome;
+        }
+        if (cargo) {
+            agente.cargo = cargo;
+        }
+        if (dataDeIncorporacao) {
+            agente.dataDeIncorporacao = dataDeIncorporacao;
+        }
+        res.status(200).json(agente);
+    }
+}
 
 module.exports = {
     getAllagentes,
     getAgentesById,
     create,
     update,
-    deleteAgente
+    deleteAgente,
+    updateParcial
 };
