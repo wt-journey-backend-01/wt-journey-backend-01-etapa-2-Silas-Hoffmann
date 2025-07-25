@@ -21,7 +21,12 @@ function findAll() {
 function findById(id) {
     return agentes.find(agente => agente.id === id);
 }
+function findByNome(nome) {
+    return agentes.find(agente => agente.nome === nome);
+}
+
 module.exports = {
     findAll,
-    findById
+    findById,
+    findByNome
 }
