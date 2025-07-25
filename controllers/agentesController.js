@@ -1,6 +1,10 @@
 const agentesRepository = require('../repositories/agentesRepository');
 const { v4: uuidv4 } = require('uuid');
 
+function isUUID(str) { // valida o formato do id para UUID
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return regex.test(str);
+}
 function validacaoData(dataStr) { // 1 = valida | 0 = fora do formato | -1 = data futura
     // Verifica o formato com regex: YYYY-MM-DD
     const regex = /^\d{4}-\d{2}-\d{2}$/;
@@ -25,6 +29,9 @@ function getAllagentes(req, res) {
 function getAgentesById(req, res) {
     const id = req.params.id;
     const agente = agentesRepository.findById(id);
+    if (!agente) {
+        return res.status(404).send("Agente nao encontrado");
+    }
     res.status(200).send(agente);
 }
 function create(req, res) {
@@ -45,8 +52,12 @@ function create(req, res) {
             return res.status(400).send("Data nao pode ser futura");
         }
     }
+    const newId = uuidv4();
+    while (!isUUID(newId) || agentesRepository.findById(newId)) {
+        newId = uuidv4()
+    }
 
-    const newAgente = { id: uuidv4(), nome, dataDeIncorporacao, cargo };
+    const newAgente = { newId, nome, dataDeIncorporacao, cargo };
     agentesRepository.add(newAgente);
     res.status(201).json(newAgente);
 }
@@ -94,30 +105,31 @@ function deleteAgente(req, res) {
 function updateParcial(req, res) {
     const uuid = req.params.id;
     const agente = agentesRepository.findById(uuid);
-    const { nome, cargo, dataDeIncorporacao, id } = req.body;
     if (!agente) {
         return res.status(404).send("Agente não encontrado");
-    } else {
-        if (nome) {
-            agente.nome = nome;
-        }
-        if (cargo) {
-            agente.cargo = cargo;
-        }
-        if (dataDeIncorporacao) {
-            const datavalida = validacaoData(dataDeIncorporacao);
-            if (datavalida == 0) {
-                return res.status(400).send("Data invalida YYYY-MM-DD");
-            } else if (datavalida == -1) {
-                return res.status(400).send("Data nao pode ser futura");
-            }
-            agente.dataDeIncorporacao = dataDeIncorporacao;
-        }
-        if ('id' in req.body) {
-            return res.status(400).send("ID nao pode ser alterado");
-        }
-        res.status(200).json(agente);
     }
+    if ('id' in req.body) {
+        return res.status(400).send("ID nao pode ser alterado");
+    }
+    const { nome, cargo, dataDeIncorporacao } = req.body;
+    if (dataDeIncorporacao) {
+        const datavalida = validacaoData(dataDeIncorporacao);
+        if (datavalida == 0) {
+            return res.status(400).send("Data invalida YYYY-MM-DD");
+        } else if (datavalida == -1) {
+            return res.status(400).send("Data nao pode ser futura");
+        }
+    }
+    if (nome) {
+        agente.nome = nome;
+    }
+    if (cargo) {
+        agente.cargo = cargo;
+    }
+    if (dataDeIncorporacao){
+        agente.dataDeIncorporacao = dataDeIncorporacao;
+    }
+    res.status(200).json(agente);
 }
 
 module.exports = {

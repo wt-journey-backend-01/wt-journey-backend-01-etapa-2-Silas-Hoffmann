@@ -37,7 +37,13 @@ function create(req, res) {
     if (!agente) {
         return res.status(404).send("Agente nao encontrado");
     }
-    const newCaso = { id: uuidv4(), titulo, descricao, status, agente_id: agente.id };
+
+    const newId = uuidv4();
+    while (!isUUID(newId) || agentesRepository.findById(newId)) {
+        newId = uuidv4()
+    }
+
+    const newCaso = { newId, titulo, descricao, status, agente_id: agente.id };
     casosRepository.add(newCaso);
     res.status(201).json(newCaso);
 }
@@ -85,6 +91,17 @@ function updateParcial(req, res) {
     if (!caso) {
         return res.status(404).send("Caso não encontrado");
     } else {
+        if ('id' in req.body) {
+            return res.status(400).send("ID nao pode ser alterado");
+        }
+        if (agente_id) {
+            const agente = agentesRepository.findById(agente_id);
+            if (!agente) {
+                return res.status(404).send("Agente nao encontrado");
+            } else {
+                caso.agente_id = agente.id;
+            }
+        }
         if (titulo) {
             caso.titulo = titulo;
         }
@@ -96,18 +113,6 @@ function updateParcial(req, res) {
                 return res.status(400).send("Status deve ser 'aberto' ou 'solucionado'");
             }
             caso.status = status;
-        }
-        if ('id' in req.body) {
-            return res.status(400).send("ID nao pode ser alterado");
-        }
-
-        if (agente_id) {
-            const agente = agentesRepository.findById(agente_id);
-            if (!agente) {
-                return res.status(404).send("Agente nao encontrado");
-            } else {
-                caso.agente_id = agente.id;
-            }
         }
         res.status(200).json(caso);
     }
