@@ -28,13 +28,22 @@ function findAll() {
 function findById(id) {
     return casos.find(caso => caso.id === id);
 }
-
 function add(newCaso) {
     casos.push(newCaso);
+}
+function removeById(id) {
+    const index = casos.findIndex(c => c.id === id);
+    if (index === -1){
+        return false;
+    } else {
+        casos.splice(index, 1);
+        return true;
+    }
 }
 
 module.exports = {
     findAll,
     findById,
-    add
+    add,
+    removeById
 }

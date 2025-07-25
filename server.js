@@ -36,23 +36,23 @@ app.get('/', (req, res) => {
 app.post('/casos', (req, res) => {
     const { titulo, descricao, status, agente_nome } = req.body;
     if (!titulo) {
-        return res.status(400).send("<p>Titulo obrigatorio<p>");
+        return res.status(400).send("<p>Titulo obrigatorio</p>");
     }
     if (!descricao) {
-        return res.status(400).send("<p>Descrição obrigatoria<p>");
+        return res.status(400).send("<p>Descrição obrigatoria</p>");
     }
     if (!status) {
-        return res.status(400).send("<p>Status obrigatorio (aberto / solucionado)<p>");
+        return res.status(400).send("<p>Status obrigatorio (aberto / solucionado)</p>");
     }
     if (status != 'aberto' && status != 'solucionado') {
-        return res.status(400).send("<p>Status deve ser 'aberto' ou 'solucionado'<p>");
+        return res.status(400).send("<p>Status deve ser 'aberto' ou 'solucionado'</p>");
     }
     if (!agente_nome) {
-        return res.status(400).send("<p>Agente responsável obrigatorio<p>");
+        return res.status(400).send("<p>Agente responsável obrigatorio</p>");
     }
     const agente = agentesRepository.findByNome(agente_nome);
     if (!agente) {
-        return res.status(404).send("<p>Agente nao encontrado<p>");
+        return res.status(404).send("<p>Agente nao encontrado</p>");
     }
     const newCaso = { id: uuidv4(), titulo, descricao, status, agente_id: agente.id };
     casosRepository.add(newCaso);
@@ -61,14 +61,11 @@ app.post('/casos', (req, res) => {
 
 app.delete('/casos/:id', (req, res) => {
     const id = req.params.id;
-    const index = casosRepository.findIndex(c => c.id === id);
-
-    if (index === -1) {
-        return res.status(404).send("<p>Caso não encontrado<p>");
+    const sucesso = casosRepository.removeById(id);
+    if (!sucesso) {
+        return res.status(404).send("<p>Caso não encontrado</p>");
     }
-
-    casosRepository.splice(index, 1);
-    res.status(204).send(); // sem corpo
+    res.status(204).send();
 });
 
 app.get('/casos', (req, res) => {
@@ -109,7 +106,7 @@ app.get('/casos/:id', (req, res) => {
     let html;
 
     if (!caso) {
-        return res.status(404).send("<p>Caso não encontrado<p>");
+        return res.status(404).send("<p>Caso não encontrado</p>");
     } else {
         html = `
         <html>
@@ -137,33 +134,32 @@ app.put('/casos/:id', (req, res) => {
     const caso = casosRepository.findById(id);
     const { titulo, descricao, status, agente_nome } = req.body;
     if (!caso) {
-        return res.status(404).send("<p>Caso não encontrado<p>");
+        return res.status(404).send("<p>Caso não encontrado</p>");
     } else {
         if (!titulo) {
-            return res.status(400).send("<p>Titulo obrigatorio<p>");
+            return res.status(400).send("<p>Titulo obrigatorio</p>");
         }
         if (!descricao) {
-            return res.status(400).send("<p>Descrição obrigatoria<p>");
+            return res.status(400).send("<p>Descrição obrigatoria</p>");
         }
         if (!status) {
-            return res.status(400).send("<p>Status obrigatorio (aberto / solucionado)<p>");
+            return res.status(400).send("<p>Status obrigatorio (aberto / solucionado)</p>");
         }
         if (status != 'aberto' && status != 'solucionado') {
-            return res.status(400).send("<p>Status deve ser 'aberto' ou 'solucionado'<p>");
+            return res.status(400).send("<p>Status deve ser 'aberto' ou 'solucionado'</p>");
         }
         if (!agente_nome) {
-            return res.status(400).send("<p>Agente responsável obrigatorio<p>");
+            return res.status(400).send("<p>Agente responsável obrigatorio</p>");
         }
         const agente = agentesRepository.findByNome(agente_nome);
         if (!agente) {
-            return res.status(404).send("<p>Agente nao encontrado<p>");
+            return res.status(404).send("<p>Agente nao encontrado</p>");
         }
         caso.titulo = titulo;
         caso.descricao = descricao;
         caso.status = status;
         caso.agente_id = agente.id;
-
-        res.status(201).json(caso);
+        res.status(200).json(caso);
     }
 
 });
@@ -177,11 +173,28 @@ app.patch('/casos/:id', (req, res) => {
 --------------Rotas dos agentes---------------
 --------------------------------------------*/
 app.post('/agentes', (req, res) => {
-    res.status(201);
+    const { nome, cargo, dataDeIncorporacao } = req.body;
+    if (!nome){
+        return res.status(400).send("<p>Nome obrigatório</p>");
+    }
+    if (!cargo){
+        return res.status(400).send("<p>Cargo obrigatório</p>");
+    }
+    if (!dataDeIncorporacao){
+        return res.status(400).send("<p>Data de Incorporacao obrigatória</p>");
+    }
+    const newAgente = { id: uuidv4(), nome, dataDeIncorporacao, cargo };
+    agentesRepository.add(newAgente);
+    res.status(201).json(newAgente);
 });
 
 app.delete('/agentes/:id', (req, res) => {
-    res.status(204);
+    const id = req.params.id;
+    const sucesso = agentesRepository.removeById(id);
+    if (!sucesso) {
+        return res.status(404).send("<p>Agente nao encontrado</p>");
+    }
+    res.status(204).send();
 });
 
 app.get('/agentes', (req, res) => {
@@ -221,7 +234,7 @@ app.get('/agentes/:id', (req, res) => {
     let html;
 
     if (!agente) {
-        return res.status(404).send("<p>Agente não encontrado<p>");
+        return res.status(404).send("<p>Agente não encontrado</p>");
     } else {
         html = `
         <html>
@@ -244,7 +257,25 @@ app.get('/agentes/:id', (req, res) => {
 });
 
 app.put('/agentes/:id', (req, res) => {
-    res.status(200);
+    const id = req.params.id;
+    const { nome, cargo, dataDeIncorporacao } = req.body;
+    if (!nome){
+        return res.status(400).send("<p>Nome obrigatório</p>");
+    }
+    if (!cargo){
+        return res.status(400).send("<p>Cargo obrigatório</p>");
+    }
+    if (!dataDeIncorporacao){
+        return res.status(400).send("<p>Data de Incorporacao obrigatória</p>");
+    }
+    const agente = agentesRepository.findById(id);
+    if (!agente) {
+        return res.status(404).send("<p>Agente nao encontrado</p>");
+    }
+    agente.nome = nome;
+    agente.cargo = cargo;
+    agente.dataDeIncorporacao = dataDeIncorporacao;
+    res.status(200).json(agente);
 });
 
 app.patch('/agentes/:id', (req, res) => {

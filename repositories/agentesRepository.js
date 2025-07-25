@@ -24,9 +24,23 @@ function findById(id) {
 function findByNome(nome) {
     return agentes.find(agente => agente.nome === nome);
 }
+function add(newAgente) {
+    agentes.push(newAgente);
+}
+function removeById(id) {
+    const index = agentes.findIndex(a => a.id === id);
+    if (index === -1){
+        return false;
+    } else {
+        agentes.splice(index, 1);
+        return true;
+    }
+}
 
 module.exports = {
     findAll,
     findById,
-    findByNome
+    findByNome,
+    add,
+    removeById
 }
