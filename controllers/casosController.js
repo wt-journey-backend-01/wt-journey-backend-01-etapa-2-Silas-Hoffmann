@@ -5,113 +5,71 @@ const { v4: uuidv4 } = require('uuid');
 
 function getAllcasos(req, res) {
     const casos = casosRepository.findAll();
-
-    let html = `
-            <html>
-            <head>
-                <title>Lista de Casos</title>
-            </head>
-            <body>
-                <h1>Casos Registrados</h1>
-                <div style="border: 1px solid black; border-radius: 5px; padding: 10px">
-        `;
-    casos.forEach(caso => {
-        html += `
-                <div style="border: 1px solid black; border-radius: 5px; padding: 10px">
-                    <h2><strong>${caso.titulo}</strong></h2>
-                    <p><strong>${caso.status}</strong></p>
-                    <p>${caso.descricao}</p>
-                    <p>Agente responsável: ${caso.agente_id}</p>
-                </div>
-                <br>
-            `;
-    });
-    html += `
-                </div>
-            </body>
-            </html>
-        `;
-    res.status(200).send(html);
+    res.status(200).send(casos);
 }
 function getCasosById(req, res) {
     const id = req.params.id;
     const caso = casosRepository.findById(id);
-
-    let html;
-
     if (!caso) {
-        return res.status(404).send("<p>Caso não encontrado</p>");
+        return res.status(404).send("Caso não encontrado");
     } else {
-        html = `
-            <html>
-            <head>
-                <title>Lista de Casos</title>
-            </head>
-            <body>
-                <h1>Casos Encontrados</h1>
-                <div style="border: 1px solid black; border-radius: 5px; padding: 10px">
-                    <h2><strong>${caso.titulo}</strong></h2>
-                    <p><strong>${caso.status}</strong></p>
-                    <p>${caso.descricao}</p>
-                    <p>Agente responsável: ${caso.agente_id}</p>
-                </div>
-            </body>
-            </html>
-            `
+        res.status(200).send(caso);
     }
-
-    res.status(200).send(html);
 }
 function create(req, res) {
-    const { titulo, descricao, status, agente_nome } = req.body;
+    const { titulo, descricao, status, agente_id } = req.body;
     if (!titulo) {
-        return res.status(400).send("<p>Titulo obrigatorio</p>");
+        return res.status(400).send("Titulo obrigatorio");
     }
     if (!descricao) {
-        return res.status(400).send("<p>Descrição obrigatoria</p>");
+        return res.status(400).send("Descrição obrigatoria");
     }
     if (!status) {
-        return res.status(400).send("<p>Status obrigatorio (aberto / solucionado)</p>");
+        return res.status(400).send("Status obrigatorio (aberto / solucionado)");
     }
     if (status != 'aberto' && status != 'solucionado') {
-        return res.status(400).send("<p>Status deve ser 'aberto' ou 'solucionado'</p>");
+        return res.status(400).send("Status deve ser 'aberto' ou 'solucionado'");
     }
-    if (!agente_nome) {
-        return res.status(400).send("<p>Agente responsável obrigatorio</p>");
+    if (!agente_id) {
+        return res.status(400).send("Agente responsável obrigatorio");
     }
-    const agente = agentesRepository.findByNome(agente_nome);
+    const agente = agentesRepository.findById(agente_id);
     if (!agente) {
-        return res.status(404).send("<p>Agente nao encontrado</p>");
+        return res.status(404).send("Agente nao encontrado");
     }
     const newCaso = { id: uuidv4(), titulo, descricao, status, agente_id: agente.id };
     casosRepository.add(newCaso);
     res.status(201).json(newCaso);
 }
 function update(req, res) {
-    const id = req.params.id;
-    const caso = casosRepository.findById(id);
-    const { titulo, descricao, status, agente_nome } = req.body;
+    const uuid = req.params.id;
+    const caso = casosRepository.findById(uuid);
+    const { titulo, descricao, status, agente_id, id } = req.body;
     if (!caso) {
-        return res.status(404).send("<p>Caso não encontrado</p>");
+        return res.status(404).send("Caso não encontrado");
     } else {
         if (!titulo) {
-            return res.status(400).send("<p>Titulo obrigatorio</p>");
+            return res.status(400).send("Titulo obrigatorio");
         }
         if (!descricao) {
-            return res.status(400).send("<p>Descrição obrigatoria</p>");
+            return res.status(400).send("Descrição obrigatoria");
         }
         if (!status) {
-            return res.status(400).send("<p>Status obrigatorio (aberto / solucionado)</p>");
+            return res.status(400).send("Status obrigatorio (aberto / solucionado)");
         }
         if (status != 'aberto' && status != 'solucionado') {
-            return res.status(400).send("<p>Status deve ser 'aberto' ou 'solucionado'</p>");
+            return res.status(400).send("Status deve ser 'aberto' ou 'solucionado'");
         }
-        if (!agente_nome) {
-            return res.status(400).send("<p>Agente responsável obrigatorio</p>");
+        if (!agente_id) {
+            return res.status(400).send("Agente responsável obrigatorio");
         }
-        const agente = agentesRepository.findByNome(agente_nome);
+        if ('id' in req.body) {
+            return res.status(400).send("ID nao pode ser alterado");
+        }
+
+        const agente = agentesRepository.findById(agente_id);
         if (!agente) {
-            return res.status(404).send("<p>Agente nao encontrado</p>");
+            return res.status(404).send("Agente nao encontrado");
         }
         caso.titulo = titulo;
         caso.descricao = descricao;
@@ -121,11 +79,11 @@ function update(req, res) {
     }
 }
 function updateParcial(req, res) {
-    const id = req.params.id;
-    const caso = casosRepository.findById(id);
-    const { titulo, descricao, status, agente_nome } = req.body;
+    const uuid = req.params.id;
+    const caso = casosRepository.findById(uuid);
+    const { titulo, descricao, status, agente_id, id } = req.body;
     if (!caso) {
-        return res.status(404).send("<p>Caso não encontrado</p>");
+        return res.status(404).send("Caso não encontrado");
     } else {
         if (titulo) {
             caso.titulo = titulo;
@@ -135,15 +93,18 @@ function updateParcial(req, res) {
         }
         if (status) {
             if (status != 'aberto' && status != 'solucionado') {
-                return res.status(400).send("<p>Status deve ser 'aberto' ou 'solucionado'</p>");
+                return res.status(400).send("Status deve ser 'aberto' ou 'solucionado'");
             }
             caso.status = status;
         }
+        if ('id' in req.body) {
+            return res.status(400).send("ID nao pode ser alterado");
+        }
 
-        if (agente_nome) {
-            const agente = agentesRepository.findByNome(agente_nome);
+        if (agente_id) {
+            const agente = agentesRepository.findById(agente_id);
             if (!agente) {
-                return res.status(404).send("<p>Agente nao encontrado</p>");
+                return res.status(404).send("Agente nao encontrado");
             } else {
                 caso.agente_id = agente.id;
             }
@@ -155,7 +116,7 @@ function deleteCaso(req, res) {
     const id = req.params.id;
     const sucesso = casosRepository.removeById(id);
     if (!sucesso) {
-        return res.status(404).send("<p>Caso não encontrado</p>");
+        return res.status(404).send("Caso não encontrado");
     }
     res.status(204).send();
 }

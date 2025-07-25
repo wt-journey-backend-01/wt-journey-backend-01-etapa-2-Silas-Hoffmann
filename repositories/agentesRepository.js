@@ -19,9 +19,6 @@ function findAll() {
 function findById(id) {
     return agentes.find(agente => agente.id === id);
 }
-function findByNome(nome) {
-    return agentes.find(agente => agente.nome === nome);
-}
 function add(newAgente) {
     agentes.push(newAgente);
 }
@@ -38,7 +35,6 @@ function removeById(id) {
 module.exports = {
     findAll,
     findById,
-    findByNome,
     add,
     removeById
 }
