@@ -52,7 +52,7 @@ function create(req, res) {
             return res.status(400).send("Data nao pode ser futura");
         }
     }
-    const newId = uuidv4();
+    let newId = uuidv4();
     while (!isUUID(newId) || agentesRepository.findById(newId)) {
         newId = uuidv4()
     }
@@ -63,6 +63,9 @@ function create(req, res) {
 }
 function update(req, res) {
     const uuid = req.params.id;
+    if (!isUUID(uuid)) {
+        return res.status(400).send("ID invalido (formato UUID)");
+    }
     const { nome, cargo, dataDeIncorporacao, id } = req.body;
     const agente = agentesRepository.findById(uuid);
     if (!agente) {
@@ -104,6 +107,9 @@ function deleteAgente(req, res) {
 }
 function updateParcial(req, res) {
     const uuid = req.params.id;
+    if (!isUUID(uuid)) {
+        return res.status(400).send("ID invalido (formato UUID)");
+    }
     const agente = agentesRepository.findById(uuid);
     if (!agente) {
         return res.status(404).send("Agente não encontrado");

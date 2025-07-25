@@ -1,8 +1,11 @@
 const casosRepository = require('../repositories/casosRepository');
 const agentesRepository = require('../repositories/agentesRepository');
-
 const { v4: uuidv4 } = require('uuid');
 
+function isUUID(str) { // valida o formato do id para UUID
+    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return regex.test(str);
+}
 function getAllcasos(req, res) {
     const casos = casosRepository.findAll();
     res.status(200).send(casos);
@@ -38,7 +41,7 @@ function create(req, res) {
         return res.status(404).send("Agente nao encontrado");
     }
 
-    const newId = uuidv4();
+    let newId = uuidv4();
     while (!isUUID(newId) || agentesRepository.findById(newId)) {
         newId = uuidv4()
     }
@@ -49,6 +52,9 @@ function create(req, res) {
 }
 function update(req, res) {
     const uuid = req.params.id;
+    if (!isUUID(uuid)) {
+        return res.status(400).send("ID invalido (formato UUID)");
+    }
     const caso = casosRepository.findById(uuid);
     const { titulo, descricao, status, agente_id, id } = req.body;
     if (!caso) {
@@ -86,6 +92,9 @@ function update(req, res) {
 }
 function updateParcial(req, res) {
     const uuid = req.params.id;
+    if (!isUUID(uuid)) {
+        return res.status(400).send("ID invalido (formato UUID)");
+    }
     const caso = casosRepository.findById(uuid);
     const { titulo, descricao, status, agente_id, id } = req.body;
     if (!caso) {
