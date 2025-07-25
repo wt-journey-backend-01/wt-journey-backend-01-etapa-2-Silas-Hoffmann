@@ -3,10 +3,10 @@ const app = express();
 app.use(express.json());
 
 const agentesRouter = require("./routes/agentesRoutes")
-app.use(agentesRouter);
+app.use('/agentes', agentesRouter);
 
 const casosRouter = require("./routes/casosRoutes")
-app.use(casosRouter);
+app.use('/casos', casosRouter);
 
 const PORT = 3000;
 
